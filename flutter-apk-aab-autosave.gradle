@@ -1,0 +1,49 @@
+// Add this below of your existing content in android/app/build.gradle
+
+def appName = "APP_NAME"  // Replace APP_NAME with actual app name
+def versionName = android.defaultConfig.versionName
+def targetDir = file("${project.rootDir}/../build_outputs")  // <project>/build_outputs
+
+project.afterEvaluate {
+    targetDir.mkdirs()
+    println "🎯 Target directory: ${targetDir.absolutePath}"
+
+    // APK copy after assembleRelease
+    tasks.named('assembleRelease').configure {
+        doLast {
+            def apkFile = file("${project.rootDir}/../build/app/outputs/flutter-apk/app-release.apk")
+            println "  📁 APK: ${apkFile.absolutePath} -> ${apkFile.exists()}"
+
+            if (apkFile.exists()) {
+                def targetFile = new File(targetDir, "${appName}_v${versionName}_release.apk")
+                targetFile.parentFile.mkdirs()
+
+                // Use Ant copy – simplest and reliable in Gradle/Groovy
+                ant.copy(file: apkFile.absolutePath, tofile: targetFile.absolutePath)
+
+                println "✅ APK COPIED TO: ${targetFile.absolutePath}"
+            } else {
+                println "❌ APK not found after build"
+            }
+        }
+    }
+
+    // AAB copy after bundleRelease (when you run flutter build appbundle)
+    tasks.named('bundleRelease').configure {
+        doLast {
+            def aabFile = file("${project.rootDir}/../build/app/outputs/bundle/release/app-release.aab")
+            println "  📁 AAB: ${aabFile.absolutePath} -> ${aabFile.exists()}"
+
+            if (aabFile.exists()) {
+                def targetFile = new File(targetDir, "${appName}_v${versionName}_release.aab")
+                targetFile.parentFile.mkdirs()
+
+                ant.copy(file: aabFile.absolutePath, tofile: targetFile.absolutePath)
+
+                println "✅ AAB COPIED TO: ${targetFile.absolutePath}"
+            } else {
+                println "❌ AAB not found after build"
+            }
+        }
+    }
+}
